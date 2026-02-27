@@ -44,7 +44,7 @@ use snarkvm_synthesizer::{
     Authorization,
     Process,
     Program,
-    snark::{Certificate, ProvingKey, VerifyingKey},
+    snark::{Certificate, Proof, ProvingKey, VerifyingKey},
 };
 
 mod request;
@@ -118,6 +118,7 @@ pub type ValueTypeNative = ValueType<CurrentNetwork>;
 // Synthesizer types
 pub type AuthorizationNative = Authorization<CurrentNetwork>;
 pub type ProcessNative = Process<CurrentNetwork>;
+pub type ProofNative = Proof<CurrentNetwork>;
 pub type ProvingKeyNative = ProvingKey<CurrentNetwork>;
 pub type RequestNative = Request<CurrentNetwork>;
 pub type StatePathNative = StatePath<CurrentNetwork>;
