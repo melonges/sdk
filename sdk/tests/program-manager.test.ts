@@ -8,12 +8,15 @@ import {
     ImportedVerifyingKeys,
     OfflineQuery,
     PrivateKey,
+    Proof,
     Program,
     ProgramManager,
     ProvingRequest,
     RecordPlaintext,
     Transaction,
     verifyFunctionExecution,
+    snarkVerify,
+    snarkVerifyBatch,
     VerifyingKey,
     ViewKey
 } from "@provablehq/sdk/%%NETWORK%%.js";
@@ -28,6 +31,7 @@ import {
 } from "./data/account-data.js";
 import { IMPORT_1, IMPORT_2, MINT_VERIFYING_KEY, PROGRAM, SPEND_VERIFYING_KEY, SPIN_VERIFYING_KEY } from "./data/program.js";
 import { RECORD_PLAINTEXT_V1_STRING } from "./data/records";
+import { SAMPLE_VERIFYING_KEY, SAMPLE_PROOF, SAMPLE_INPUTS } from "./data/snark-verify.js";
 import { expect } from "chai";
 import {
     PUZZLE_SPINNER_PROGRAM_ID,
@@ -428,6 +432,52 @@ describe('Program Manager', async () => {
             } catch (e) {
                 expect(`${e}`).contain("findCreditsRecord");
             }
+        });
+    });
+
+    describe('Proof type', () => {
+        it('Proof.fromString should reject invalid input', () => {
+            expect(() => Proof.fromString("invalid_proof")).to.throw();
+        });
+
+        it('Proof.fromBytes should reject invalid input', () => {
+            expect(() => Proof.fromBytes(new Uint8Array([0, 1, 2, 3]))).to.throw();
+        });
+
+        it('Proof should round-trip through toString', () => {
+            const proof = Proof.fromString(SAMPLE_PROOF);
+            expect(proof.toString()).to.equal(SAMPLE_PROOF);
+        });
+    });
+
+    describe('SNARK Verification', () => {
+        it('snarkVerify should return true for a valid proof', () => {
+            const vk = VerifyingKey.fromString(SAMPLE_VERIFYING_KEY);
+            const proof = Proof.fromString(SAMPLE_PROOF);
+            const result = snarkVerify(vk, SAMPLE_INPUTS, proof);
+            expect(result).to.equal(true);
+        });
+
+        it('snarkVerify should return false for wrong inputs', () => {
+            const vk = VerifyingKey.fromString(SAMPLE_VERIFYING_KEY);
+            const proof = Proof.fromString(SAMPLE_PROOF);
+            const result = snarkVerify(vk, ["1field", "2field"], proof);
+            expect(result).to.equal(false);
+        });
+
+        it('snarkVerifyBatch should return true for a valid proof', () => {
+            const proof = Proof.fromString(SAMPLE_PROOF);
+            const result = snarkVerifyBatch(
+                [SAMPLE_VERIFYING_KEY],
+                [[SAMPLE_INPUTS]],
+                proof,
+            );
+            expect(result).to.equal(true);
+        });
+
+        it('snarkVerifyBatch should throw when verifying keys and inputs length mismatch', () => {
+            const proof = Proof.fromString(SAMPLE_PROOF);
+            expect(() => snarkVerifyBatch(["vk1", "vk2"], [[SAMPLE_INPUTS]], proof)).to.throw();
         });
     });
 });
