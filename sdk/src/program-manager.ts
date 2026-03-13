@@ -1915,9 +1915,10 @@ class ProgramManager {
      * human-readable strings (e.g. `"my_program"`) instead of requiring
      * `stringToField("my_program").toString()`.
      *
-     * Inputs that already look like a field literal (ending in `"field"`) are
-     * left untouched. Non-field inputs are returned as-is. If introspection
-     * fails for any reason the original inputs are returned unchanged.
+     * Inputs that already look like a numeric field literal (matching
+     * `/^\d+field$/` after trimming whitespace) are left untouched. Non-field
+     * inputs are returned as-is. If introspection fails for any reason the
+     * original inputs are returned unchanged.
      *
      * @param {string} programSource - The program source code
      * @param {string} functionName - The function to inspect
@@ -1937,7 +1938,8 @@ class ProgramManager {
             }
             return inputs.map((input, i) => {
                 const spec = functionInputs[i] as { type?: string };
-                if (spec?.type === "field" && !input.endsWith("field")) {
+                const isFieldLiteral = /^\d+field$/.test(input.trim());
+                if (spec?.type === "field" && !isFieldLiteral) {
                     return stringToField(input).toString();
                 }
                 return input;
@@ -2329,6 +2331,9 @@ class ProgramManager {
             }
         }
 
+        // Auto-convert bare string inputs to field elements where the function expects field type.
+        const preparedInputs = this.prepareInputs(program, function_id, inputs);
+
         // Attempt to run an offline execution of the program and extract the proving and verifying keys
         try {
             imports = await this.networkClient.getProgramImports(program);
@@ -2336,7 +2341,7 @@ class ProgramManager {
                 executionPrivateKey,
                 program,
                 function_id,
-                inputs,
+                preparedInputs,
                 imports,
             );
             const keys: FunctionKeyPair = [
@@ -3785,12 +3790,15 @@ class ProgramManager {
             }
         }
         
+        // Auto-convert bare string inputs to field elements where the function expects field type.
+        const preparedInputs = this.prepareInputs(program, functionName, inputs);
+
         // Build a transaction without a proof
         return await WasmProgramManager.buildDevnodeExecutionTransaction(
             executionPrivateKey,
             program,
             functionName,
-            inputs,
+            preparedInputs,
             priorityFee,
             feeRecord,
             this.host,
