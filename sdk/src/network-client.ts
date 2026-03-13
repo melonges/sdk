@@ -1,4 +1,12 @@
-import { get, post, parseJSON, logAndThrow, retryWithBackoff, environment, isNode } from "./utils.js";
+import {
+    get,
+    post,
+    parseJSON,
+    logAndThrow,
+    retryWithBackoff,
+    environment,
+    isNode,
+} from "./utils.js";
 import { Account } from "./account.js";
 import { BlockJSON } from "./models/blockJSON.js";
 import { TransactionJSON } from "./models/transaction/transactionJSON.js";
@@ -23,7 +31,7 @@ import {
 } from "./models/provingResponse.js";
 import { CryptoBoxPubKey } from "./models/cryptoBoxPubkey.js";
 import { EncryptedProvingRequest } from "./models/encryptedProvingRequest.js";
-import { encryptProvingRequest } from "./security.js"
+import { encryptProvingRequest } from "./security.js";
 import { FIVE_MINUTES } from "./constants";
 
 type ProgramImports = { [key: string]: string | Program };
@@ -36,7 +44,7 @@ interface AleoNetworkClientOptions {
 
 /**
  * Interface for the JWT data.
- * 
+ *
  * @property jwt {string} The JWT token string.
  * @property expiration {number} The expiration time of the JWT token in UNIX timestamp format.
  */
@@ -55,12 +63,12 @@ interface JWTData {
  * @property jwt {string} An optional JWT token used for authenticating with the proving service.
  */
 interface DelegatedProvingParams {
-  provingRequest: ProvingRequest | string;
-  url?: string;
-  apiKey?: string;
-  consumerId?: string;
-  jwtData?: JWTData;
-  dpsPrivacy?: boolean;
+    provingRequest: ProvingRequest | string;
+    url?: string;
+    apiKey?: string;
+    consumerId?: string;
+    jwtData?: JWTData;
+    dpsPrivacy?: boolean;
 }
 
 /**
@@ -115,7 +123,8 @@ class AleoNetworkClient {
 
             // If a record scanner uri was specified, set the record scanner uri.
             if (options.recordScannerUri) {
-                this.recordScannerUri = options.recordScannerUri + "/%%NETWORK%%";
+                this.recordScannerUri =
+                    options.recordScannerUri + "/%%NETWORK%%";
             }
         } else {
             this.headers = {
@@ -269,7 +278,7 @@ class AleoNetworkClient {
      */
     async fetchRaw(url = "/"): Promise<string> {
         try {
-            const ctx = {...this.ctx};
+            const ctx = { ...this.ctx };
             return await retryWithBackoff(async () => {
                 const response = await get(this.host + url, {
                     headers: {
@@ -439,7 +448,7 @@ class AleoNetworkClient {
                                         const transition =
                                             transaction.execution.transitions[
                                                 k
-                                                ];
+                                            ];
                                         // Only search for unspent records in the specified programs.
                                         if (
                                             !(typeof programs === "undefined")
@@ -496,14 +505,19 @@ class AleoNetworkClient {
                                                             }
 
                                                             if (unspent) {
-                                                                const recordViewKey = recordPlaintext.recordViewKey(viewKey).toString();
+                                                                const recordViewKey =
+                                                                    recordPlaintext
+                                                                        .recordViewKey(
+                                                                            viewKey,
+                                                                        )
+                                                                        .toString();
                                                                 // Otherwise record the nonce that has been found
                                                                 const serialNumber =
                                                                     recordPlaintext.serialNumberString(
                                                                         resolvedPrivateKey,
                                                                         "credits.aleo",
                                                                         "credits",
-                                                                        recordViewKey
+                                                                        recordViewKey,
                                                                     );
                                                                 // Attempt to see if the serial number is spent
                                                                 try {
@@ -552,14 +566,14 @@ class AleoNetworkClient {
                                                                     "undefined"
                                                                 ) &&
                                                                 amounts.length >
-                                                                0
+                                                                    0
                                                             ) {
                                                                 let amounts_found = 0;
                                                                 if (
                                                                     recordPlaintext.microcredits() >
                                                                     amounts[
                                                                         amounts_found
-                                                                        ]
+                                                                    ]
                                                                 ) {
                                                                     amounts_found += 1;
                                                                     records.push(
@@ -605,9 +619,9 @@ class AleoNetworkClient {
                 // If there is an error fetching blocks, log it and keep searching
                 console.warn(
                     "Error fetching blocks in range: " +
-                    start.toString() +
-                    "-" +
-                    end.toString(),
+                        start.toString() +
+                        "-" +
+                        end.toString(),
                 );
                 console.warn("Error: ", error);
                 failures += 1;
@@ -829,7 +843,9 @@ class AleoNetworkClient {
             program = program.id();
         }
         try {
-            this.ctx = { "X-ALEO-METHOD": "getDeploymentTransactionForProgram" };
+            this.ctx = {
+                "X-ALEO-METHOD": "getDeploymentTransactionForProgram",
+            };
             const transaction_id = <string>(
                 await this.getDeploymentTransactionIDForProgram(program)
             );
@@ -866,7 +882,9 @@ class AleoNetworkClient {
         program: Program | string,
     ): Promise<Transaction> {
         try {
-            this.ctx = { "X-ALEO-METHOD": "getDeploymentTransactionObjectForProgram" };
+            this.ctx = {
+                "X-ALEO-METHOD": "getDeploymentTransactionObjectForProgram",
+            };
             const transaction_id = <string>(
                 await this.getDeploymentTransactionIDForProgram(program)
             );
@@ -1071,7 +1089,9 @@ class AleoNetworkClient {
     async getLatestProgramEdition(programId: string): Promise<number> {
         try {
             this.ctx = { "X-ALEO-METHOD": "getLatestProgramEdition" };
-            const raw = await this.fetchRaw("/program/" + programId + "/latest_edition");
+            const raw = await this.fetchRaw(
+                "/program/" + programId + "/latest_edition",
+            );
             return JSON.parse(raw);
         } catch (error) {
             throw new Error(`Error fetching program ${programId}: ${error}`);
@@ -1103,7 +1123,10 @@ class AleoNetworkClient {
      * // Both program objects should be equal
      * assert(programObjectFromID.to_string() === programObjectFromSource.to_string());
      */
-    async getProgramObject(inputProgram: string, edition?: number): Promise<Program> {
+    async getProgramObject(
+        inputProgram: string,
+        edition?: number,
+    ): Promise<Program> {
         try {
             this.ctx = { "X-ALEO-METHOD": "getProgramObject" };
             return Program.fromString(
@@ -1148,7 +1171,10 @@ class AleoNetworkClient {
      * programImports = await networkClient.getProgramImports(double_test);
      * assert.deepStrictEqual(programImports, expectedImports);
      */
-    async getProgramImports(inputProgram: Program | string, imports: ProgramImports = {}): Promise<ProgramImports> {
+    async getProgramImports(
+        inputProgram: Program | string,
+        imports: ProgramImports = {},
+    ): Promise<ProgramImports> {
         try {
             this.ctx = { "X-ALEO-METHOD": "getProgramImports" };
 
@@ -1177,8 +1203,12 @@ class AleoNetworkClient {
             for (let i = 0; i < importList.length; i++) {
                 const import_id = importList[i];
                 if (!imports.hasOwnProperty(import_id)) {
-                    const programSource = <string>await this.getProgram(import_id);
-                    const nestedImports = <ProgramImports>await this.getProgramImports(programSource, imports);
+                    const programSource = <string>(
+                        await this.getProgram(import_id)
+                    );
+                    const nestedImports = <ProgramImports>(
+                        await this.getProgramImports(programSource, imports)
+                    );
 
                     for (const key in nestedImports) {
                         if (!imports.hasOwnProperty(key)) {
@@ -1197,7 +1227,6 @@ class AleoNetworkClient {
             this.ctx = {};
         }
     }
-
 
     /**
      * Get a list of the program names that a program imports.
@@ -1658,13 +1687,22 @@ class AleoNetworkClient {
                 ? transaction.toString()
                 : transaction;
         try {
-            const endpoint = this.verboseErrors ? "transaction/broadcast?check_transaction=true" : "transaction/broadcast";
+            const endpoint = this.verboseErrors
+                ? "transaction/broadcast?check_transaction=true"
+                : "transaction/broadcast";
             const response = await retryWithBackoff(() =>
                 this._sendPost(`${this.host}/${endpoint}`, {
                     body: transactionString,
-                    headers: Object.assign({}, {...this.headers, "X-ALEO-METHOD" : "submitTransaction"}, {
-                        "Content-Type": "application/json",
-                    }),
+                    headers: Object.assign(
+                        {},
+                        {
+                            ...this.headers,
+                            "X-ALEO-METHOD": "submitTransaction",
+                        },
+                        {
+                            "Content-Type": "application/json",
+                        },
+                    ),
                 }),
             );
 
@@ -1677,9 +1715,7 @@ class AleoNetworkClient {
                 );
             }
         } catch (error: any) {
-            throw new Error(
-                `Error posting transaction: ${error}`,
-            );
+            throw new Error(`Error posting transaction: ${error}`);
         }
     }
 
@@ -1694,9 +1730,13 @@ class AleoNetworkClient {
             const response = await retryWithBackoff(() =>
                 post(this.host + "/solution/broadcast", {
                     body: solution,
-                    headers: Object.assign({}, {...this.headers, "X-ALEO-METHOD": "submitSolution"}, {
-                        "Content-Type": "application/json",
-                    }),
+                    headers: Object.assign(
+                        {},
+                        { ...this.headers, "X-ALEO-METHOD": "submitSolution" },
+                        {
+                            "Content-Type": "application/json",
+                        },
+                    ),
                 }),
             );
 
@@ -1717,40 +1757,46 @@ class AleoNetworkClient {
 
     /**
      * Refreshes the JWT by making a POST request to /jwts/{consumer_id}
-     * 
+     *
      * @param {string} apiKey - The API key for authentication.
      * @param {string} consumerId - The consumer ID associated with the API key.
      * @returns {Promise<JwtData>} The JWT token and expiration time
      */
-    private async refreshJwt(apiKey: string, consumerId: string): Promise<JWTData> {
+    private async refreshJwt(
+        apiKey: string,
+        consumerId: string,
+    ): Promise<JWTData> {
         if (!apiKey || !consumerId) {
-            throw new Error('API key and consumer ID are required to refresh JWT');
+            throw new Error(
+                "API key and consumer ID are required to refresh JWT",
+            );
         }
         const response = await post(
             `https://api.provable.com/jwts/${consumerId}`,
             {
                 headers: {
-                    'X-Provable-API-Key': apiKey
-                }
-            }
+                    "X-Provable-API-Key": apiKey,
+                },
+            },
         );
-        const authHeader = response.headers.get('authorization');
+        const authHeader = response.headers.get("authorization");
         if (!authHeader) {
-            throw new Error('No authorization header in JWT refresh response');
+            throw new Error("No authorization header in JWT refresh response");
         }
         const body = await response.json();
-        
+
         return {
             jwt: authHeader,
-            expiration: body.exp * 1000 // Convert to milliseconds
+            expiration: body.exp * 1000, // Convert to milliseconds
         };
     }
-
 
     /**
      * Parses a /prove or /prove/encrypted response. Returns a result object (never throws for 200/400/500/503).
      */
-    private async handleProvingResponse(response: Response): Promise<ProvingResult> {
+    private async handleProvingResponse(
+        response: Response,
+    ): Promise<ProvingResult> {
         // Get the proving response text.
         const text = await response.text();
         let body: unknown;
@@ -1775,7 +1821,11 @@ class AleoNetworkClient {
         }
 
         // If the response is non 200, return the information back to the caller so it can be handled.
-        if (response.status === 400 || response.status === 500 || response.status === 503) {
+        if (
+            response.status === 400 ||
+            response.status === 500 ||
+            response.status === 503
+        ) {
             const error: ProveApiErrorBody = isProveApiErrorBody(body)
                 ? body
                 : { message: text || `${response.status} error` };
@@ -1794,7 +1844,9 @@ class AleoNetworkClient {
      * @param {DelegatedProvingParams} options - The optional parameters required to submit a proving request.
      * @returns {Promise<ProvingResponse>} The ProvingResponse containing the transaction result and the result of the broadcast if the `broadcast` flag was set to `true`.
      */
-    async submitProvingRequest(options: DelegatedProvingParams): Promise<ProvingResponse> {
+    async submitProvingRequest(
+        options: DelegatedProvingParams,
+    ): Promise<ProvingResponse> {
         const result = await this.submitProvingRequestSafe(options);
         if (result.ok) {
             return result.data;
@@ -1810,12 +1862,15 @@ class AleoNetworkClient {
      * @param {DelegatedProvingParams} options - The optional parameters required to submit a proving request.
      * @returns {Promise<ProvingResult>} `{ ok: true, data }` on success (200), or `{ ok: false, status, error }` on 400/500/503. Check `result.ok` and then either `result.data` or `result.status` / `result.error.message`.
      */
-    async submitProvingRequestSafe(options: DelegatedProvingParams): Promise<ProvingResult> {
+    async submitProvingRequestSafe(
+        options: DelegatedProvingParams,
+    ): Promise<ProvingResult> {
         // Attempt to get the Prover URI first from the options, then from any configured globally, or third try the main configured host.
-        const proverUri = (options.url ?? this.proverUri) ?? this.host;
-        const provingRequestString = options.provingRequest instanceof ProvingRequest
-            ? options.provingRequest.toString()
-            : options.provingRequest;
+        const proverUri = options.url ?? this.proverUri ?? this.host;
+        const provingRequestString =
+            options.provingRequest instanceof ProvingRequest
+                ? options.provingRequest.toString()
+                : options.provingRequest;
 
         // Try to get JWT data to access the Provable API.
         const apiKey = options.apiKey ?? this.apiKey;
@@ -1823,14 +1878,17 @@ class AleoNetworkClient {
         let jwtData = options.jwtData ?? this.jwtData;
 
         // Check to see if the JWT needs refreshing.
-        const isExpired = jwtData && Date.now() >= jwtData.expiration - FIVE_MINUTES;
+        const isExpired =
+            jwtData && Date.now() >= jwtData.expiration - FIVE_MINUTES;
         if (!jwtData || isExpired) {
             if (options.apiKey && options.consumerId) {
                 jwtData = await this.refreshJwt(apiKey!, consumerId!);
                 this.jwtData = jwtData;
                 options.jwtData = jwtData;
             } else {
-                console.warn('JWT or both apiKey and consumerId are required when using the Provable API');
+                console.warn(
+                    "JWT or both apiKey and consumerId are required when using the Provable API",
+                );
             }
         }
 
@@ -1870,7 +1928,9 @@ class AleoNetworkClient {
                 };
 
                 // We're in node, attempt to set the cookie manually.
-                const cookie = isNode() ? pubKeyResponse.headers.get("set-cookie"): undefined;
+                const cookie = isNode()
+                    ? pubKeyResponse.headers.get("set-cookie")
+                    : undefined;
 
                 // Send the encrypted proving request to the DPS service.
                 const res = await fetch(`${proverUri}/prove/encrypted`, {
@@ -1878,7 +1938,7 @@ class AleoNetworkClient {
                     body: JSON.stringify(payload),
                     headers: {
                         ...headers,
-                        ...(cookie ? { Cookie: cookie } : {})
+                        ...(cookie ? { Cookie: cookie } : {}),
                     },
                     credentials: "include",
                 });
@@ -1912,7 +1972,9 @@ class AleoNetworkClient {
 
                 // If 500s are hit responses are returned, attempt retries.
                 if (result.status === 500 || result.status === 503) {
-                    const err = new Error(result.error.message) as ProvingRequestError;
+                    const err = new Error(
+                        result.error.message,
+                    ) as ProvingRequestError;
                     err.status = result.status;
                     throw err;
                 }
@@ -1982,7 +2044,8 @@ class AleoNetworkClient {
                         {
                             headers: {
                                 ...this.headers,
-                                "X-ALEO-METHOD" : "waitForTransactionConfirmation",
+                                "X-ALEO-METHOD":
+                                    "waitForTransactionConfirmation",
                             },
                         },
                     );
